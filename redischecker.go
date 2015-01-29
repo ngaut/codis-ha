@@ -1,9 +1,8 @@
 package main
 
 import (
-	"time"
-
 	"github.com/garyburd/redigo/redis"
+	"time"
 )
 
 var (
