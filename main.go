@@ -12,7 +12,7 @@ type fnHttpCall func(objPtr interface{}, api string, method string, arg interfac
 type aliveCheckerFactory func(addr string, defaultTimeout time.Duration) AliveChecker
 
 var (
-	apiServer   = flag.String("apiserver", "localhost:18087", "api server address")
+	apiServer   = flag.String("codis-config", "localhost:18087", "api server address")
 	productName = flag.String("productName", "test", "product name, can be found in codis-proxy's config")
 
 	callHttp fnHttpCall          = httpCall

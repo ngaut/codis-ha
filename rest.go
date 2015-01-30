@@ -37,5 +37,9 @@ func httpCall(objPtr interface{}, url string, method string, arg interface{}) er
 		return errors.Errorf("error: %d, message: %s", resp.StatusCode, string(msg))
 	}
 
-	return json.NewDecoder(resp.Body).Decode(objPtr)
+	if objPtr != nil {
+		return json.NewDecoder(resp.Body).Decode(objPtr)
+	}
+
+	return nil
 }
