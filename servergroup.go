@@ -81,7 +81,7 @@ func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) 
 	}
 
 	//get result
-	crashedServer := make([]models.Server, 0)
+	var crashedServer []models.Server
 	for i := 0; i < serverCnt; i++ {
 		s := <-errCh
 		if s == nil { //alive
