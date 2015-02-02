@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/ngaut/codis-ha.svg?branch=master)](https://travis-ci.org/ngaut/codis-ha)
+
+
 usage:
 
 go get github.com/ngaut/codis-ha
