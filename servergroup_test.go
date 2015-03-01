@@ -16,11 +16,11 @@ var (
 	redisServer, _ = miniredis.Run()
 	groups1        = []models.ServerGroup{
 		models.ServerGroup{
-			Servers: []models.Server{
-				models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_MASTER, Addr: "localhost:xxx"},
-				models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_SLAVE, Addr: redisServer.Addr()},
-				models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_SLAVE, Addr: "xx"},
-				models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_OFFLINE, Addr: "xx"},
+			Servers: []*models.Server{
+				&models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_MASTER, Addr: "localhost:xxx"},
+				&models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_SLAVE, Addr: redisServer.Addr()},
+				&models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_SLAVE, Addr: "xx"},
+				&models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_OFFLINE, Addr: "xx"},
 			},
 		},
 	}
@@ -118,8 +118,8 @@ func TestCheckAliveAndPromote(t *testing.T) {
 	//test no slave
 	groups = []models.ServerGroup{
 		models.ServerGroup{
-			Servers: []models.Server{
-				models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_MASTER, Addr: "dead master"},
+			Servers: []*models.Server{
+				&models.Server{GroupId: GROUP_ID, Type: models.SERVER_TYPE_MASTER, Addr: "dead master"},
 			},
 		},
 	}

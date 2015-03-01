@@ -33,7 +33,7 @@ func getSlave(master *models.Server) (*models.Server, error) {
 
 	for _, s := range group.Servers {
 		if s.Type == models.SERVER_TYPE_SLAVE {
-			return &s, nil
+			return s, nil
 		}
 	}
 
@@ -76,7 +76,7 @@ func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) 
 			serverCnt++
 			rc := acf(s.Addr, 5*time.Second)
 			news := s
-			go PingServer(rc, &news, errCh)
+			go PingServer(rc, news, errCh)
 		}
 	}
 
