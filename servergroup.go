@@ -40,6 +40,16 @@ func getSlave(master *models.Server) (*models.Server, error) {
 	return nil, errors.Errorf("can not find any slave in this group: %v", group)
 }
 
+func promoteRedis(checker AliveChecker) {
+	err := checker.Promote()
+	log.Debugf("promote redis from slave to master %+v, result:%v, errCtx:%+v", checker, err)
+	if err != nil {
+		log.Errorf("do promote redis from slave to master %v failed %v", checker, errors.ErrorStack(err))
+		return
+	}
+	return
+}
+
 func handleCrashedServer(s *models.Server) error {
 	switch s.Type {
 	case models.SERVER_TYPE_MASTER:
@@ -51,6 +61,8 @@ func handleCrashedServer(s *models.Server) error {
 		}
 
 		log.Infof("try promote %+v", slave)
+		rc := acf(slave.Addr, 5*time.Second)
+		promoteRedis(rc)
 		err = callHttp(nil, genUrl(*apiServer, "/api/server_group/", slave.GroupId, "/promote"), "POST", slave)
 		if err != nil {
 			log.Errorf("do promote %v failed %v", slave, errors.ErrorStack(err))
