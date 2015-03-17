@@ -14,6 +14,7 @@ type aliveCheckerFactory func(addr string, defaultTimeout time.Duration) AliveCh
 var (
 	apiServer   = flag.String("codis-config", "localhost:18087", "api server address")
 	productName = flag.String("productName", "test", "product name, can be found in codis-proxy's config")
+	logLevel    = flag.String("log-level", "info", "log level")
 
 	callHttp fnHttpCall          = httpCall
 	acf      aliveCheckerFactory = func(addr string, timeout time.Duration) AliveChecker {
@@ -42,6 +43,7 @@ func genUrl(args ...interface{}) string {
 
 func main() {
 	flag.Parse()
+	log.SetLevelByString(*logLevel)
 
 	for {
 		groups, err := GetServerGroups()
