@@ -20,8 +20,20 @@ func PingServer(checker AliveChecker, errCtx interface{}, errCh chan<- interface
 		errCh <- errCtx
 		return
 	}
-
 	errCh <- nil
+}
+
+func verifyAndUpServer(checker AliveChecker, errCtx interface{}) {
+	errCh := make(chan interface{}, 100)
+
+	go PingServer(checker, errCtx, errCh)
+
+	s := <-errCh
+
+	if s == nil { //alive
+		handleAddServer(errCtx.(*models.Server))
+	}
+
 }
 
 func getSlave(master *models.Server) (*models.Server, error) {
@@ -67,6 +79,19 @@ func handleCrashedServer(s *models.Server) error {
 	return nil
 }
 
+func handleAddServer(s *models.Server) error {
+
+	s.Type = models.SERVER_TYPE_SLAVE
+	log.Infof("try return slave %+v", s)
+	err := callHttp(nil, genUrl(*apiServer, "/api/server_group/", s.GroupId, "/addServer"), "PUT", s)
+	if err != nil {
+		log.Errorf("do return slave %v failed %v", s, errors.ErrorStack(err))
+		return err
+	}
+
+	return nil
+}
+
 //ping codis-server find crashed codis-server
 func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) {
 	errCh := make(chan interface{}, 100)
@@ -98,4 +123,18 @@ func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) 
 	}
 
 	return crashedServer, nil
+}
+
+//ping codis-server find node up with type offine
+func CheckOfflineAndPromoteSlave(groups []models.ServerGroup) ([]models.Server, error) {
+	for _, group := range groups { //each group
+		for _, s := range group.Servers { //each server
+			rc := acf(s.Addr, 5*time.Second)
+			news := s
+			if (s.Type == models.SERVER_TYPE_OFFLINE) {
+				verifyAndUpServer(rc, news)
+			}
+		}
+	}
+	return nil, nil
 }
