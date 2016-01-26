@@ -79,17 +79,11 @@ func handleCrashedServer(s *models.Server) error {
 	return nil
 }
 
-func handleAddServer(s *models.Server) error {
-
+func handleAddServer(s *models.Server) {
 	s.Type = models.SERVER_TYPE_SLAVE
-	log.Infof("try return slave %+v", s)
+	log.Infof("try reusing slave %+v", s)
 	err := callHttp(nil, genUrl(*apiServer, "/api/server_group/", s.GroupId, "/addServer"), "PUT", s)
-	if err != nil {
-		log.Errorf("do return slave %v failed %v", s, errors.ErrorStack(err))
-		return err
-	}
-
-	return nil
+	log.Errorf("do reusing slave %v failed %v", s, errors.ErrorStack(err))
 }
 
 //ping codis-server find crashed codis-server
