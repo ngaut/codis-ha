@@ -27,15 +27,13 @@ func (r *redisChecker) ping() error {
 
 func (r *redisChecker) CheckAlive() error {
 	var err error
-	for i := 0; i < 2; i++ { //try a few times
+	for i := 0; i < HAConf.MaxTryTimes; i++ { //try a few times
 		err = r.ping()
 		if err != nil {
-			time.Sleep(3 * time.Second)
+			time.Sleep(2 * time.Second)
 			continue
 		}
-
 		return nil
 	}
-
 	return err
 }

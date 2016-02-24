@@ -1,21 +1,90 @@
 package main
 
 import (
-	"flag"
+	"encoding/json"
+	"fmt"
 	"github.com/juju/errors"
 	log "github.com/ngaut/logging"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"time"
 )
+
+var (
+	defaultConfigFile string = "./codis-ha.json"
+
+	defaultDashboardAddr string = "127.0.0.1:18087"
+	defaultProductName   string = "db_test"
+	defaultLogFile       string = "./codis-ha.log"
+	defaultLogLevel      string = "info"
+	defaultCheckInterval int    = 5
+	defaultMaxTryTimes   int    = 10
+	defaultEmailAddr     string = ""
+	defaultEmailPwd      string = ""
+	defaultSmtpAddr      string = ""
+	defaultToAddr        string = ""
+	defaultSendInterval  int64  = 300
+)
+
+type CodisHAConf struct {
+	DashboadAddr  string `json:"dashboard_addr"`
+	ProductName   string `json:"product_name"`
+	LogFile       string `json:"log_file"`
+	LogLevel      string `json:"log_level"`
+	CheckInterval int    `json:"check_interval"`
+	MaxTryTimes   int    `json:"max_try_times"`
+	EmailAddr     string `json:"email_addr"`
+	EmailPwd      string `json:"email_pwd"`
+	SmtpAddr      string `json:"smtp_addr"`
+	ToAddr        string `json:"to_addr"`
+	SendInterval  int64  `json:"send_interval"`
+}
+
+var HAConf CodisHAConf = CodisHAConf{
+	DashboadAddr:  defaultDashboardAddr,
+	ProductName:   defaultProductName,
+	LogFile:       defaultLogFile,
+	LogLevel:      defaultLogLevel,
+	CheckInterval: defaultCheckInterval,
+	MaxTryTimes:   defaultMaxTryTimes,
+	EmailAddr:     defaultEmailAddr,
+	EmailPwd:      defaultEmailPwd,
+	SmtpAddr:      defaultSmtpAddr,
+	ToAddr:        defaultToAddr,
+	SendInterval:  defaultSendInterval,
+}
+
+func LoadConf(fileName string, v interface{}) error {
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal([]byte(data), v)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func PrintCodisHAConf(conf CodisHAConf) {
+	fmt.Printf("dashboard_addr:%s\n", conf.DashboadAddr)
+	fmt.Printf("product_name:%s\n", conf.ProductName)
+	fmt.Printf("LogFile:%s\n", conf.LogFile)
+	fmt.Printf("LogLevel:%s\n", conf.LogLevel)
+	fmt.Printf("CheckInterval:%d\n", conf.CheckInterval)
+	fmt.Printf("MaxTryTimes:%d\n", conf.MaxTryTimes)
+	fmt.Printf("EmailAddr:%s\n", conf.EmailAddr)
+	fmt.Printf("EmailPwd:%s\n", conf.EmailPwd)
+	fmt.Printf("SmtpAddr:%s\n", conf.SmtpAddr)
+	fmt.Printf("ToAddr:%s\n", conf.ToAddr)
+	fmt.Printf("SendInterval:%d\n", conf.SendInterval)
+}
 
 type fnHttpCall func(objPtr interface{}, api string, method string, arg interface{}) error
 type aliveCheckerFactory func(addr string, defaultTimeout time.Duration) AliveChecker
 
 var (
-	apiServer   = flag.String("codis-config", "localhost:18087", "api server address")
-	productName = flag.String("productName", "test", "product name, can be found in codis-proxy's config")
-	logLevel    = flag.String("log-level", "info", "log level")
-
 	callHttp fnHttpCall          = httpCall
 	acf      aliveCheckerFactory = func(addr string, timeout time.Duration) AliveChecker {
 		return &redisChecker{
@@ -41,19 +110,67 @@ func genUrl(args ...interface{}) string {
 	return url
 }
 
-func main() {
-	flag.Parse()
-	log.SetLevelByString(*logLevel)
+func Usage(progName string) {
+	fmt.Printf("Usage: %s [xxx.json]\n", progName)
+	os.Exit(0)
+}
 
+var JsonExample string = `
+{
+	"dashboard_addr":"127.0.0.1:18087",
+	"product_name":"db_test",
+	"log_file":"./codis-ha.log",
+	"log_level":"info",
+	"check_interval":5,
+	"max_try_times":10,
+	"email_addr":"xxx@letv.com",
+	"email_pwd":"xxx",
+	"smtp_addr":"mail.letv.com:25",
+	"to_addr":"xxx@126.com;xxx@163.com",
+	"send_interval":300
+}
+`
+
+func ShowJsonExample(config string) {
+	fmt.Printf("%s should like this:\n%s\n", config, JsonExample)
+	os.Exit(0)
+}
+
+func main() {
+	var argNum int = len(os.Args)
+	var confile string
+
+	if argNum != 1 && argNum != 2 {
+		Usage(os.Args[0])
+	}
+	if argNum == 1 {
+		confile = defaultConfigFile
+	} else if argNum == 2 {
+		confile = os.Args[1]
+	}
+	err := LoadConf(confile, &HAConf)
+	if err != nil {
+		fmt.Printf("Load config [%s] failed,err:%s\n", confile, err.Error())
+		ShowJsonExample(confile)
+	}
+	if len(HAConf.LogFile) > 0 {
+		log.SetOutputByName(HAConf.LogFile)
+	}
+	if len(HAConf.LogLevel) > 0 {
+		log.SetLevelByString(HAConf.LogLevel)
+	}
+	//PrintCodisHAConf(HAConf)
+	log.Infof("program [%s] start...", os.Args[0])
 	for {
 		groups, err := GetServerGroups()
 		if err != nil {
-			log.Error(errors.ErrorStack(err))
-			return
+			log.Errorf("GetServerGroups failed,will sleep 30 seconds,err:%s", errors.ErrorStack(err))
+			time.Sleep(30 * time.Second)
+			continue
 		}
 
 		CheckAliveAndPromote(groups)
 		CheckOfflineAndPromoteSlave(groups)
-		time.Sleep(3 * time.Second)
+		time.Sleep(time.Duration(HAConf.CheckInterval) * time.Second)
 	}
 }
