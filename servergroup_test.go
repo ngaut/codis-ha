@@ -6,6 +6,7 @@ import (
 
 	"github.com/alicebob/miniredis"
 	"github.com/wandoulabs/codis/pkg/models"
+	//"../codis/pkg/models"
 	"testing"
 	"time"
 )
@@ -100,7 +101,7 @@ func TestCheckAliveAndPromote(t *testing.T) {
 	//test promote with slave
 	groups := groups1
 	callHttp = func(objPtr interface{}, url string, method string, arg interface{}) error {
-		if url == genUrl(*apiServer, "/api/server_group/", GROUP_ID) {
+		if url == genUrl(HAConf.DashboadAddr, "/api/server_group/", GROUP_ID) {
 			group := groups[0]
 			buf, _ := json.Marshal(group)
 			json.Unmarshal(buf, objPtr)
@@ -132,7 +133,7 @@ func TestCheckAliveAndPromote(t *testing.T) {
 	//test have slave but promote error
 	groups = groups1
 	callHttp = func(objPtr interface{}, url string, method string, arg interface{}) error {
-		if url == genUrl(*apiServer, "/api/server_group/", GROUP_ID) {
+		if url == genUrl(HAConf.DashboadAddr, "/api/server_group/", GROUP_ID) {
 			fmt.Println(url)
 			group := groups[0]
 			buf, _ := json.Marshal(group)
