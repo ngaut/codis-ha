@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/alicebob/miniredis"
-	"github.com/wandoulabs/codis/pkg/models"
-	//"../codis/pkg/models"
+	//"github.com/wandoulabs/codis/pkg/models"
+	"../codis/pkg/models"
 	"testing"
 	"time"
 )

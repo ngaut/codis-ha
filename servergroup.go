@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/juju/errors"
 	log "github.com/ngaut/logging"
-	"github.com/wandoulabs/codis/pkg/models"
-	//"../codis/pkg/models"
+	//"github.com/wandoulabs/codis/pkg/models"
+	"../codis/pkg/models"
 	"fmt"
 	"strings"
 	"time"
@@ -49,9 +49,12 @@ func verifyAndUpServer(checker AliveChecker, errCtx interface{}) {
 	go PingServer(checker, errCtx, errCh)
 
 	s := <-errCh
-
+	saddr := errCtx.(*models.Server).Addr
 	if s == nil { //alive
+		log.Infof("server [%s] is offline and it is alived,now add it to group.", saddr)
 		handleAddServer(errCtx.(*models.Server))
+	} else {
+		log.Debugf("server [%s] is offline and it is not alived,can not handle.", saddr)
 	}
 
 }
@@ -164,14 +167,43 @@ func handleAddServer(s *models.Server) {
 	err := callHttp(nil, genUrl(HAConf.DashboadAddr, "/api/server_group/", s.GroupId, "/addServer"), "PUT", s)
 	if err != nil {
 		log.Errorf("do reusing slave [%+v] failed,trace:%s", s, errors.ErrorStack(err))
+		tt := time.Now()
+		emailtime := EmailSendTime[s.Addr]
+		if emailtime == nil {
+			emailtime = &EmailTime{}
+			EmailSendTime[s.Addr] = emailtime
+		}
+		if tt.Unix()-emailtime.errortime > HAConf.SendInterval {
+			subject := fmt.Sprintf("通知-重用OFFLINE server失败(%04d-%02d-%02d %02d:%02d:%02d)", tt.Year(), tt.Month(),
+				tt.Day(), tt.Hour(), tt.Minute(), tt.Second())
+			data := fmt.Sprintf("group [%d], server [%s] is offline and alived,now reuse it to be slave failed, should handle it; err:%s",
+				s.GroupId, s.Addr, err.Error())
+			err = SendSmtpEmail(HAConf.EmailAddr, HAConf.EmailPwd, HAConf.SmtpAddr, HAConf.ToAddr, subject, data, "text")
+			if err != nil {
+				log.Infof("send mail[%s] to [%s] failed, content [%s],err:%s", subject, HAConf.ToAddr, data, err.Error())
+			} else {
+				log.Infof("send mail[%s] to [%s] success, content [%s]", subject, HAConf.ToAddr, data)
+			}
+		}
 	} else {
 		log.Infof("do reusing slave [%+v] success.", s)
+		tt := time.Now()
+		subject := fmt.Sprintf("通知-重用OFFLINE server成功(%04d-%02d-%02d %02d:%02d:%02d)", tt.Year(), tt.Month(),
+			tt.Day(), tt.Hour(), tt.Minute(), tt.Second())
+		data := fmt.Sprintf("group [%d], server [%s] is offline and alived,now reuse it to be slave success.",
+			s.GroupId, s.Addr)
+		err = SendSmtpEmail(HAConf.EmailAddr, HAConf.EmailPwd, HAConf.SmtpAddr, HAConf.ToAddr, subject, data, "text")
+		if err != nil {
+			log.Infof("send mail[%s] to [%s] failed, content [%s],err:%s", subject, HAConf.ToAddr, data, err.Error())
+		} else {
+			log.Infof("send mail[%s] to [%s] success, content [%s]", subject, HAConf.ToAddr, data)
+		}
 	}
 }
 
 //ping codis-server find crashed codis-server
 func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) {
-	errCh := make(chan interface{}, 128)
+	errCh := make(chan interface{}, 1024)
 	var serverCnt int
 	for _, group := range groups { //each group
 		for _, s := range group.Servers { //each server
@@ -191,27 +223,24 @@ func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) 
 			continue
 		}
 		log.Warningf("server maybe crashed %+v", s)
-		str := fmt.Sprintf("%v", s)
 		// send mail when server crashed
-		if strings.Contains(str, models.SERVER_TYPE_OFFLINE) == false {
-			tt := time.Now()
-			saddr := s.(*models.Server).Addr
-			emailtime := EmailSendTime[saddr]
-			if emailtime == nil {
-				emailtime = &EmailTime{}
-				EmailSendTime[saddr] = emailtime
-			}
-			if tt.Unix()-emailtime.warntime > HAConf.SendInterval {
-				subject := fmt.Sprintf("警告-redis故障(%04d-%02d-%02d %02d:%02d:%02d)", tt.Year(), tt.Month(),
-					tt.Day(), tt.Hour(), tt.Minute(), tt.Second())
-				data := fmt.Sprintf("server [%v] may be crashed.", s)
-				err := SendSmtpEmail(HAConf.EmailAddr, HAConf.EmailPwd, HAConf.SmtpAddr, HAConf.ToAddr, subject, data, "text")
-				if err != nil {
-					log.Warningf("send mail[%s] to [%s] failed, content [%s], err:%s", subject, HAConf.ToAddr, data, err.Error())
-				} else {
-					log.Warningf("send mail[%s] to [%s] success, content [%s]", subject, HAConf.ToAddr, data)
-					emailtime.warntime = tt.Unix()
-				}
+		tt := time.Now()
+		saddr := s.(*models.Server).Addr
+		emailtime := EmailSendTime[saddr]
+		if emailtime == nil {
+			emailtime = &EmailTime{}
+			EmailSendTime[saddr] = emailtime
+		}
+		if tt.Unix()-emailtime.warntime > HAConf.SendInterval {
+			subject := fmt.Sprintf("警告-redis故障(%04d-%02d-%02d %02d:%02d:%02d)", tt.Year(), tt.Month(),
+				tt.Day(), tt.Hour(), tt.Minute(), tt.Second())
+			data := fmt.Sprintf("server [%v] may be crashed.", s)
+			err := SendSmtpEmail(HAConf.EmailAddr, HAConf.EmailPwd, HAConf.SmtpAddr, HAConf.ToAddr, subject, data, "text")
+			if err != nil {
+				log.Warningf("send mail[%s] to [%s] failed, content [%s], err:%s", subject, HAConf.ToAddr, data, err.Error())
+			} else {
+				log.Warningf("send mail[%s] to [%s] success, content [%s]", subject, HAConf.ToAddr, data)
+				emailtime.warntime = tt.Unix()
 			}
 		}
 
