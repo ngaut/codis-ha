@@ -5,9 +5,9 @@
 	"log_level":"info",
 	"check_interval":5,
 	"max_try_times":6,
-	"email_addr":"wangchunyan1@letv.com",
-	"email_pwd":"wlibo666@126",
+	"email_addr":"xxx@letv.com",
+	"email_pwd":"xxx",
 	"smtp_addr":"mail.letv.com:25",
-	"to_addr":"865745354@qq.com",
+	"to_addr":"xxx@qq.com;xxx@126.com;xxx@163.com",
 	"send_interval":300
 }
