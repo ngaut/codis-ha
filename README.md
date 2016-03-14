@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/ngaut/codis-ha.svg?branch=master)](https://travis-ci.org/ngaut/codis-ha)
 
-
+基于codis 2.x (https://github.com/wlibo666/codis)
 Usage:
 
 go get github.com/wlibo666/codis-ha
