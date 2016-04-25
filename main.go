@@ -14,6 +14,7 @@ type codisCheckerFactory func(addr string, defaultTimeout time.Duration) CodisCh
 var args struct {
 	apiServer string
 	logLevel  string
+	quiet     bool
 }
 
 var (
@@ -46,11 +47,12 @@ func main() {
 	usage := `
 Usage:
 	codis-ha sentinel   [--server=S]  [--logLevel=L]
-	codis-ha latency  	[--server=S]  [--logLevel=L]
+	codis-ha latency  	[--server=S]  [--logLevel=L] [--quiet]
 
 Options:
 	-s S, --server=S                 Set api server address, default is "localhost:18087".
 	-l L, --logLevel=L               Set loglevel, default is "info".
+	-q, --quiet            			 Set latency output less information without slot latency.	
 `
 	d, err := docopt.Parse(usage, nil, true, "", false)
 	if err != nil {
@@ -59,6 +61,7 @@ Options:
 
 	args.apiServer, _ = d["--server"].(string)
 	args.logLevel, _ = d["--logLevel"].(string)
+	args.quiet, _ = d["--quiet"].(bool)
 
 	log.SetLevelByString(args.logLevel)
 

@@ -19,13 +19,15 @@ Usage:
 
 		codis-ha sentinel   [--server=S]  [--logLevel=L]
 
-		codis-ha latency  	[--server=S]  [--logLevel=L]
+		codis-ha latency  	[--server=S]  [--logLevel=L] [--quiet]
 
 	Options:
 
 		-s S, --server=S                 Set api server address, default is "localhost:18087".
 
 		-l L, --logLevel=L               Set loglevel, default is "info".
+
+		-q, --quiet            			 Set latency output less information without slot latency.
 
 Example:
 ---------------

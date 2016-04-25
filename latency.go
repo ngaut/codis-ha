@@ -102,7 +102,9 @@ func (cmd *cmdLatency) OutputLatency() {
 		count++
 		latencyMap[out.proxy] = append(latencyMap[out.proxy], out.latency)
 		latencyMap[out.server] = append(latencyMap[out.server], out.latency)
-		fmt.Printf("Latency:%q; Proxy:%s; Server:%s; Slot:%d; Key:%s\n", out.latency, out.proxy, out.server, out.slot, out.key)
+		if !args.quiet {
+			fmt.Printf("Latency:%q; Proxy:%s; Server:%s; Slot:%d; Key:%s\n", out.latency, out.proxy, out.server, out.slot, out.key)
+		}
 	}
 	for server, latencys := range latencyMap {
 		var lsum time.Duration
