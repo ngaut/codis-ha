@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+type duraSlice []time.Duration
+
 type outElem struct {
 	key     string
 	latency time.Duration
@@ -92,9 +94,24 @@ func (cmd *cmdLatency) GetSlotServer(slot int) string {
 }
 
 func (cmd *cmdLatency) OutputLatency() {
+	var total time.Duration
+	var count int
+	latencyMap := make(map[string]duraSlice)
 	for _, out := range cmd.outList {
-		fmt.Printf("Latency:%q; Proxy:%s; Server:%s; Slot:%d; Key:%s", out.latency, out.proxy, out.server, out.slot, out.key)
+		total += out.latency
+		count++
+		latencyMap[out.proxy] = append(latencyMap[out.proxy], out.latency)
+		latencyMap[out.server] = append(latencyMap[out.server], out.latency)
+		fmt.Printf("Latency:%q; Proxy:%s; Server:%s; Slot:%d; Key:%s\n", out.latency, out.proxy, out.server, out.slot, out.key)
 	}
+	for server, latencys := range latencyMap {
+		var lsum time.Duration
+		for _, l := range latencys {
+			lsum += l
+		}
+		fmt.Printf("Server %s latency: %q\n", server, lsum/time.Duration(len(latencys)))
+	}
+	fmt.Printf("Codis latency: %q\n", total/time.Duration(count))
 }
 
 func HashSlot(s string) uint32 {
