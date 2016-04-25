@@ -9,11 +9,23 @@ import (
 
 func GetServerGroups() ([]models.ServerGroup, error) {
 	var groups []models.ServerGroup
-	err := callHttp(&groups, genUrl(*apiServer, "/api/server_groups"), "GET", nil)
+	err := callHttp(&groups, genUrl(args.apiServer, "/api/server_groups"), "GET", nil)
 	return groups, err
 }
 
-func PingServer(checker AliveChecker, errCtx interface{}, errCh chan<- interface{}) {
+func GetProxyList() ([]models.ProxyInfo, error) {
+	var proxys []models.ProxyInfo
+	err := callHttp(&proxys, genUrl(args.apiServer, "/api/proxy/list"), "GET", nil)
+	return proxys, err
+}
+
+func GetSlotList() ([]models.Slot, error) {
+	var slots []models.Slot
+	err := callHttp(&slots, genUrl(args.apiServer, "/api/slot/list"), "GET", nil)
+	return slots, err
+}
+
+func PingServer(checker CodisChecker, errCtx interface{}, errCh chan<- interface{}) {
 	err := checker.CheckAlive()
 	log.Debugf("check %+v, result:%v, errCtx:%+v", checker, err, errCtx)
 	if err != nil {
@@ -23,7 +35,7 @@ func PingServer(checker AliveChecker, errCtx interface{}, errCh chan<- interface
 	errCh <- nil
 }
 
-func verifyAndUpServer(checker AliveChecker, errCtx interface{}) {
+func verifyAndUpServer(checker CodisChecker, errCtx interface{}) {
 	errCh := make(chan interface{}, 100)
 
 	go PingServer(checker, errCtx, errCh)
@@ -38,7 +50,7 @@ func verifyAndUpServer(checker AliveChecker, errCtx interface{}) {
 
 func getSlave(master *models.Server) (*models.Server, error) {
 	var group models.ServerGroup
-	err := callHttp(&group, genUrl(*apiServer, "/api/server_group/", master.GroupId), "GET", nil)
+	err := callHttp(&group, genUrl(args.apiServer, "/api/server_group/", master.GroupId), "GET", nil)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -63,7 +75,7 @@ func handleCrashedServer(s *models.Server) error {
 		}
 
 		log.Infof("try promote %+v", slave)
-		err = callHttp(nil, genUrl(*apiServer, "/api/server_group/", slave.GroupId, "/promote"), "POST", slave)
+		err = callHttp(nil, genUrl(args.apiServer, "/api/server_group/", slave.GroupId, "/promote"), "POST", slave)
 		if err != nil {
 			log.Errorf("do promote %v failed %v", slave, errors.ErrorStack(err))
 			return err
@@ -82,7 +94,7 @@ func handleCrashedServer(s *models.Server) error {
 func handleAddServer(s *models.Server) {
 	s.Type = models.SERVER_TYPE_SLAVE
 	log.Infof("try reusing slave %+v", s)
-	err := callHttp(nil, genUrl(*apiServer, "/api/server_group/", s.GroupId, "/addServer"), "PUT", s)
+	err := callHttp(nil, genUrl(args.apiServer, "/api/server_group/", s.GroupId, "/addServer"), "PUT", s)
 	log.Errorf("do reusing slave %v failed %v", s, errors.ErrorStack(err))
 }
 
@@ -125,7 +137,7 @@ func CheckOfflineAndPromoteSlave(groups []models.ServerGroup) ([]models.Server, 
 		for _, s := range group.Servers { //each server
 			rc := acf(s.Addr, 5*time.Second)
 			news := s
-			if (s.Type == models.SERVER_TYPE_OFFLINE) {
+			if s.Type == models.SERVER_TYPE_OFFLINE {
 				verifyAndUpServer(rc, news)
 			}
 		}

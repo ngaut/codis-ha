@@ -1,23 +1,24 @@
 package main
 
 import (
-	"flag"
-	"github.com/juju/errors"
-	log "github.com/ngaut/logging"
 	"strconv"
 	"time"
+
+	"github.com/docopt/docopt-go"
+	log "github.com/ngaut/logging"
 )
 
 type fnHttpCall func(objPtr interface{}, api string, method string, arg interface{}) error
-type aliveCheckerFactory func(addr string, defaultTimeout time.Duration) AliveChecker
+type codisCheckerFactory func(addr string, defaultTimeout time.Duration) CodisChecker
+
+var args struct {
+	apiServer string
+	logLevel  string
+}
 
 var (
-	apiServer   = flag.String("codis-config", "localhost:18087", "api server address")
-	productName = flag.String("productName", "test", "product name, can be found in codis-proxy's config")
-	logLevel    = flag.String("log-level", "info", "log level")
-
 	callHttp fnHttpCall          = httpCall
-	acf      aliveCheckerFactory = func(addr string, timeout time.Duration) AliveChecker {
+	acf      codisCheckerFactory = func(addr string, timeout time.Duration) CodisChecker {
 		return &redisChecker{
 			addr:           addr,
 			defaultTimeout: timeout,
@@ -42,18 +43,29 @@ func genUrl(args ...interface{}) string {
 }
 
 func main() {
-	flag.Parse()
-	log.SetLevelByString(*logLevel)
+	usage := `
+Usage:
+	codis-ha sentinel   [--server=S]  [--logLevel=L]
+	codis-ha latency  	[--server=S]  [--logLevel=L]
 
-	for {
-		groups, err := GetServerGroups()
-		if err != nil {
-			log.Error(errors.ErrorStack(err))
-			return
-		}
+Options:
+	-s S, --server=S                 Set api server address, default is "localhost:18087".
+	-l L, --logLevel=L               Set loglevel, default is "info".
+`
+	d, err := docopt.Parse(usage, nil, true, "", false)
+	if err != nil {
+		log.Errorf("parse arguments failed: %q", err)
+	}
 
-		CheckAliveAndPromote(groups)
-		CheckOfflineAndPromoteSlave(groups)
-		time.Sleep(3 * time.Second)
+	args.apiServer, _ = d["--server"].(string)
+	args.logLevel, _ = d["--logLevel"].(string)
+
+	log.SetLevelByString(args.logLevel)
+
+	switch {
+	case d["sentinel"].(bool):
+		Sentinel()
+	case d["latency"].(bool):
+		new(cmdLatency).Main()
 	}
 }
