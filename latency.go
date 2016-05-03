@@ -111,9 +111,9 @@ func (cmd *cmdLatency) OutputLatency() {
 		for _, l := range latencys {
 			lsum += l
 		}
-		fmt.Printf("Server %s latency: %q\n", server, lsum/time.Duration(len(latencys)))
+		fmt.Printf("Server %s latency: %f ms\n", server, float32(lsum/time.Duration(len(latencys)))/1000000)
 	}
-	fmt.Printf("Codis latency: %q\n", total/time.Duration(count))
+	fmt.Printf("Codis latency: %f ms\n", float32(total/time.Duration(count))/1000000)
 }
 
 func HashSlot(s string) uint32 {
