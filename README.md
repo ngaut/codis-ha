@@ -18,6 +18,8 @@ Usage:
 		codis-ha sentinel   [--server=S]  [--logLevel=L]
 
 		codis-ha latency  	[--server=S]  [--logLevel=L] [--quiet]
+		
+		codis-ha version
 
 	Options:
 
