@@ -1,10 +1,8 @@
-[![Build Status](https://travis-ci.org/ngaut/codis-ha.svg?branch=master)](https://travis-ci.org/ngaut/codis-ha)
-
 
 Get & Compile:
 ---------------
 
-	go get github.com/ngaut/codis-ha
+	go get github.com/left2right/codis-ha
 
 
 	cd codis-ha
