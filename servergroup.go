@@ -4,10 +4,11 @@ import (
 	"github.com/juju/errors"
 	log "github.com/ngaut/logging"
 	//"github.com/wandoulabs/codis/pkg/models"
-	"../codis/pkg/models"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/wlibo666/codis/pkg/models"
 )
 
 type EmailTime struct {

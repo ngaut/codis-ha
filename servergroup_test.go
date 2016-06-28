@@ -6,9 +6,10 @@ import (
 
 	"github.com/alicebob/miniredis"
 	//"github.com/wandoulabs/codis/pkg/models"
-	"../codis/pkg/models"
 	"testing"
 	"time"
+
+	"github.com/wlibo666/codis/pkg/models"
 )
 
 const GROUP_ID = 1
