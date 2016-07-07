@@ -70,7 +70,7 @@ func getSlave(master *models.Server) (*models.Server, error) {
 	for _, s := range group.Servers {
 		if s.Type == models.SERVER_TYPE_SLAVE {
 			// check slave is alive or not
-			rc := acf(s.Addr, 3*time.Second)
+			rc := acf(s.Addr, s.Type, 3*time.Second)
 			err = rc.CheckAlive()
 			if err != nil {
 				log.Warningf("master [%s] crashed,its slave [%s] crashed too,find next.", master.Addr, s.Addr)
@@ -209,7 +209,7 @@ func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) 
 	for _, group := range groups { //each group
 		for _, s := range group.Servers { //each server
 			serverCnt++
-			rc := acf(s.Addr, 3*time.Second)
+			rc := acf(s.Addr, s.Type, 3*time.Second)
 			server := s
 			log.Debugf("ping group[%d],type[%s],server[%s]", s.GroupId, s.Type, s.Addr)
 			go PingServer(rc, server, errCh)
@@ -260,7 +260,7 @@ func CheckAliveAndPromote(groups []models.ServerGroup) ([]models.Server, error) 
 func CheckOfflineAndPromoteSlave(groups []models.ServerGroup) ([]models.Server, error) {
 	for _, group := range groups { //each group
 		for _, s := range group.Servers { //each server
-			rc := acf(s.Addr, 5*time.Second)
+			rc := acf(s.Addr, s.Type, 5*time.Second)
 			news := s
 			if s.Type == models.SERVER_TYPE_OFFLINE {
 				verifyAndUpServer(rc, news)

@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/juju/errors"
-	log "github.com/ngaut/logging"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/juju/errors"
+	log "github.com/ngaut/logging"
 )
 
 var (
@@ -25,6 +26,8 @@ var (
 	defaultSmtpAddr      string = ""
 	defaultToAddr        string = ""
 	defaultSendInterval  int64  = 300
+	defaultMasterSave    string = ""
+	defaultSlaveSave     string = "600 1"
 )
 
 type CodisHAConf struct {
@@ -39,6 +42,8 @@ type CodisHAConf struct {
 	SmtpAddr      string `json:"smtp_addr"`
 	ToAddr        string `json:"to_addr"`
 	SendInterval  int64  `json:"send_interval"`
+	MasterSave    string `json:"master_save"`
+	SlaveSave     string `json:"slave_save"`
 }
 
 var HAConf CodisHAConf = CodisHAConf{
@@ -53,6 +58,8 @@ var HAConf CodisHAConf = CodisHAConf{
 	SmtpAddr:      defaultSmtpAddr,
 	ToAddr:        defaultToAddr,
 	SendInterval:  defaultSendInterval,
+	MasterSave:    defaultMasterSave,
+	SlaveSave:     defaultSlaveSave,
 }
 
 func LoadConf(fileName string, v interface{}) error {
@@ -79,16 +86,19 @@ func PrintCodisHAConf(conf CodisHAConf) {
 	fmt.Printf("SmtpAddr:%s\n", conf.SmtpAddr)
 	fmt.Printf("ToAddr:%s\n", conf.ToAddr)
 	fmt.Printf("SendInterval:%d\n", conf.SendInterval)
+	fmt.Printf("MasterSave:%d\n", conf.MasterSave)
+	fmt.Printf("SlaveSave:%d\n", conf.SlaveSave)
 }
 
 type fnHttpCall func(objPtr interface{}, api string, method string, arg interface{}) error
-type aliveCheckerFactory func(addr string, defaultTimeout time.Duration) AliveChecker
+type aliveCheckerFactory func(addr, role string, defaultTimeout time.Duration) AliveChecker
 
 var (
 	callHttp fnHttpCall          = httpCall
-	acf      aliveCheckerFactory = func(addr string, timeout time.Duration) AliveChecker {
+	acf      aliveCheckerFactory = func(addr, role string, timeout time.Duration) AliveChecker {
 		return &redisChecker{
 			addr:           addr,
+			role:           role,
 			defaultTimeout: timeout,
 		}
 	}
@@ -127,7 +137,9 @@ var JsonExample string = `
 	"email_pwd":"xxx",
 	"smtp_addr":"mail.letv.com:25",
 	"to_addr":"xxx@126.com;xxx@163.com",
-	"send_interval":300
+	"send_interval":300,
+    "master_save":"",
+	"slave_save":"600 1"
 }
 `
 

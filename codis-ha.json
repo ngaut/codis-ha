@@ -9,5 +9,7 @@
 	"email_pwd":"xxx",
 	"smtp_addr":"mail.letv.com:25",
 	"to_addr":"xxx@qq.com;xxx@126.com;xxx@163.com",
-	"send_interval":300
+	"send_interval":300,
+	"master_save":"",
+	"slave_save":"600 1"
 }
