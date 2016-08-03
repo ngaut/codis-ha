@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/CodisLabs/codis/pkg/models"
 	"github.com/juju/errors"
 	log "github.com/ngaut/logging"
-	"github.com/wandoulabs/codis/pkg/models"
 	"hash/crc32"
 	"strconv"
 	"time"
