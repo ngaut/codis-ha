@@ -1,11 +1,17 @@
 package main
 
 import (
+	"github.com/CodisLabs/codis/pkg/models"
 	"github.com/juju/errors"
 	log "github.com/ngaut/logging"
-	"github.com/wandoulabs/codis/pkg/models"
 	"time"
 )
+
+func GetMigrateTasks() (Tasks, error) {
+	var tasks Tasks
+	err := callHttp(&tasks, genUrl(args.apiServer, "/api/migrate/tasks"), "GET", nil)
+	return tasks, err
+}
 
 func GetServerGroups() ([]models.ServerGroup, error) {
 	var groups []models.ServerGroup
