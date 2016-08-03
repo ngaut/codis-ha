@@ -86,7 +86,10 @@ Options:
 		log.Panic("--zookeeper parameter needed")
 	}
 
-	args.kill, _ = d["--kill"].(bool)
+	args.kill = false
+	if d["--kill"] != nil {
+		args.kill, _ = d["--kill"].(bool)
+	}
 
 	if d["--num"] != nil {
 		args.slotNum, err = strconv.Atoi(d["--num"].(string))

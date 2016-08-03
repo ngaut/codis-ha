@@ -47,7 +47,7 @@ func (cmd *cmdMigrate) Main() {
 		return
 	}
 	cmd.initServerGroup()
-	cmd.verifyBeforeMigrateTasks()
+	//cmd.verifyBeforeMigrateTasks()
 
 	cmd.migrateSlots(args.slotNum)
 }
@@ -59,6 +59,7 @@ func (cmd *cmdMigrate) initProductName() {
 	}
 	for _, g := range groups {
 		cmd.productName = g.ProductName
+		log.Infof("Product name is %s", cmd.productName)
 		break
 	}
 }
@@ -74,6 +75,7 @@ func (cmd *cmdMigrate) verifyBeforeMigrateTasks() {
 			log.Warn("There is running migrate tasks, waiting!!")
 			time.Sleep(time.Second * 10)
 		} else {
+			log.Info("Verify no migrate tasks done.")
 			return
 		}
 		continue
@@ -97,6 +99,7 @@ func (cmd *cmdMigrate) initZkConn() {
 	zkBuilder := utils.NewConnBuilder(cmd.newZkConn)
 	cmd.safeZkConn = zkBuilder.GetSafeConn()
 	cmd.unsafeZkConn = zkBuilder.GetUnsafeConn()
+	log.Info("Init zookeeper connection done.")
 }
 
 func (cmd *cmdMigrate) newZkConn() (zkhelper.Conn, error) {
@@ -130,6 +133,7 @@ func (cmd *cmdMigrate) initServerGroup() {
 	if !targetFind {
 		log.Panicf("target groupId not found %d", args.targetGroupId)
 	}
+	log.Info("Init server group done.")
 }
 
 func (cmd *cmdMigrate) migrateSlots(num int) {
@@ -143,8 +147,8 @@ func (cmd *cmdMigrate) migrateSlots(num int) {
 	}
 	count := num
 	for _, s := range slots {
-		cmd.verifyBeforeMigrateTasks()
 		if s.GroupId == cmd.fromGroup.Id {
+			cmd.verifyBeforeMigrateTasks()
 			log.Infof("Migrate slot %d from group %d to group %d begin:", s.Id, cmd.fromGroup.Id, cmd.targetGroup.Id)
 			cmd.runSlotMigrate(s.Id, s.Id, cmd.targetGroup.Id, 3)
 			count--
