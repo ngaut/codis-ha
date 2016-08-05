@@ -1,5 +1,10 @@
 package main
 
-type AliveChecker interface {
+import (
+	"time"
+)
+
+type CodisChecker interface {
 	CheckAlive() error
+	SetLatency(key string, value int) time.Duration
 }
